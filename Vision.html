@@ -1,0 +1,1338 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Neural Network Visualization</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #1e3c72, #2a5298);
+            font-family: 'Arial', sans-serif;
+            color: white;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+            text-shadow: 0 0 20px rgba(255, 255, 255, 0.3);
+        }
+
+        .controls {
+            text-align: center;
+            margin-bottom: 30px;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+        }
+
+        .control-group {
+            display: inline-block;
+            margin: 0 15px;
+            vertical-align: top;
+        }
+
+        .architecture-selector {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 15px;
+            border-radius: 10px;
+            margin: 10px;
+            display: inline-block;
+        }
+
+        .architecture-selector select {
+            min-width: 200px;
+            font-weight: bold;
+        }
+
+        .preset-info {
+            background: rgba(100, 150, 255, 0.2);
+            padding: 10px;
+            border-radius: 8px;
+            margin: 10px 0;
+            font-size: 12px;
+            text-align: left;
+        }
+
+        .node-special {
+            filter: drop-shadow(0 0 5px currentColor);
+        }
+
+        .connection-special {
+            animation: pulse-connection 2s infinite;
+        }
+
+        @keyframes pulse-connection {
+            0%, 100% { opacity: 0.6; }
+            50% { opacity: 1; }
+        }
+
+        .layer-config {
+            margin: 5px 0;
+            padding: 5px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 5px;
+        }
+
+        .layer-config.invalid {
+            border: 2px solid #ff6b6b;
+            background: rgba(255, 107, 107, 0.1);
+        }
+
+        .layer-count-control {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .layer-count-control button {
+            padding: 5px 10px;
+            font-size: 14px;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+
+        input, button, select {
+            padding: 8px 15px;
+            border: none;
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            font-size: 14px;
+            margin: 2px;
+        }
+
+        input[type="number"] {
+            width: 80px;
+        }
+
+        input.invalid {
+            border: 2px solid #ff6b6b;
+        }
+
+        input[type="range"] {
+            background: rgba(255, 255, 255, 0.3);
+            height: 5px;
+        }
+
+        button {
+            background: linear-gradient(45deg, #ff6b6b, #ee5a52);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin: 0 5px;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        .weight-editor {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.9);
+            padding: 30px;
+            border-radius: 15px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            display: none;
+            z-index: 1000;
+            max-height: 70vh;
+            overflow-y: auto;
+            min-width: 400px;
+        }
+
+        .weight-editor h3 {
+            margin-top: 0;
+            color: white;
+        }
+
+        .weight-item {
+            display: flex;
+            align-items: center;
+            margin: 10px 0;
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+        }
+
+        .weight-item label {
+            flex: 1;
+            margin: 0;
+            font-size: 12px;
+        }
+
+        .weight-item input {
+            width: 80px;
+            margin-left: 10px;
+        }
+
+        .close-btn {
+            position: absolute;
+            top: 10px;
+            right: 15px;
+            background: none;
+            border: none;
+            color: white;
+            font-size: 20px;
+            cursor: pointer;
+        }
+
+        .mode-selector {
+            margin: 15px 0;
+        }
+
+        .mode-selector button {
+            background: rgba(255, 255, 255, 0.2);
+            margin: 0 5px;
+        }
+
+        .mode-selector button.active {
+            background: linear-gradient(45deg, #4ecdc4, #44a08d);
+        }
+
+        #networkCanvas {
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 15px;
+            background: rgba(0, 0, 0, 0.2);
+            display: block;
+            margin: 0 auto;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        .info-panel {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            border-radius: 15px;
+            margin-top: 20px;
+            backdrop-filter: blur(10px);
+        }
+
+        .layer-info {
+            display: flex;
+            justify-content: space-around;
+            margin-top: 15px;
+        }
+
+        .layer {
+            text-align: center;
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            min-width: 100px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧠 Neural Network Visualization</h1>
+        
+        <div class="controls">
+            <div class="control-group">
+                <div class="architecture-selector">
+                    <label>Network Architecture:</label>
+                    <select id="architectureType" onchange="onArchitectureChange()">
+                        <option value="custom">Custom</option>
+                        <option value="mlp">Multi-Layer Perceptron (MLP)</option>
+                        <option value="deep_mlp">Deep MLP</option>
+                        <option value="autoencoder">Autoencoder</option>
+                        <option value="cnn_style">CNN-Style (Convolutional)</option>
+                        <option value="rnn_style">RNN-Style (Recurrent)</option>
+                        <option value="transformer_style">Transformer-Style</option>
+                        <option value="gan_style">GAN-Style</option>
+                        <option value="resnet_style">ResNet-Style</option>
+                    </select>
+                </div>
+            </div>
+
+            <div id="customControls" class="control-group">
+                <div class="control-group">
+                    <label for="inputNodes">Input Nodes:</label>
+                    <input type="number" id="inputNodes" value="4" min="2" max="20">
+                </div>
+                
+                <div class="control-group">
+                    <div class="hidden-layers-config">
+                        <label>Hidden Layers Configuration:</label>
+                        <div class="layer-config">
+                            <label for="numHiddenLayers">Number of Hidden Layers (1-10):</label>
+                            <div class="layer-count-control">
+                                <button onclick="adjustHiddenLayers(-1)">–</button>
+                                <input type="number" id="numHiddenLayers" value="2" min="1" max="10" onchange="updateHiddenLayerInputs()">
+                                <button onclick="adjustHiddenLayers(1)">+</button>
+                            </div>
+                        </div>
+                        <div id="hiddenLayerInputs">
+                            <div class="layer-config">
+                                <label>Layer 1 Nodes (2-20):</label>
+                                <input type="number" value="6" min="2" max="20" class="hidden-layer-nodes">
+                            </div>
+                            <div class="layer-config">
+                                <label>Layer 2 Nodes (2-20):</label>
+                                <input type="number" value="4" min="2" max="20" class="hidden-layer-nodes">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="control-group">
+                    <label for="outputNodes">Output Nodes:</label>
+                    <input type="number" id="outputNodes" value="3" min="1" max="20">
+                </div>
+            </div>
+
+            <div id="presetControls" class="control-group" style="display: none;">
+                <div class="control-group">
+                    <label for="presetInputNodes">Input Size:</label>
+                    <input type="number" id="presetInputNodes" value="784" min="1" max="1000">
+                </div>
+                <div class="control-group">
+                    <label for="presetOutputNodes">Output Size:</label>
+                    <input type="number" id="presetOutputNodes" value="10" min="1" max="100">
+                </div>
+                <div class="control-group">
+                    <label for="presetComplexity">Complexity:</label>
+                    <select id="presetComplexity">
+                        <option value="small">Small</option>
+                        <option value="medium" selected>Medium</option>
+                        <option value="large">Large</option>
+                    </select>
+                </div>
+            </div>
+            
+            <br>
+            
+            <div class="mode-selector">
+                <button id="editMode" class="active" onclick="setMode('edit')">Edit Mode</button>
+                <button id="viewMode" onclick="setMode('view')">View Mode</button>
+            </div>
+            
+            <br>
+            
+            <button onclick="generateNetwork()">Generate Network</button>
+            <button onclick="randomizeWeights()">Randomize Weights</button>
+            <button onclick="randomizeNeuronWeights()">Randomize Neuron Weights</button>
+            <button onclick="openWeightEditor()">Edit All Weights</button>
+            <button onclick="openNeuronWeightEditor()">Edit All Neuron Weights</button>
+            <button onclick="animateForward()">Forward Pass</button>
+            <button onclick="animateBackward()">Backpropagation</button>
+            <button onclick="resetAnimation()">Reset</button>
+        </div>
+
+        <div class="weight-editor" id="weightEditor">
+            <button class="close-btn" onclick="closeWeightEditor()">×</button>
+            <h3>Weight Editor</h3>
+            <div style="margin-bottom: 15px;">
+                <button onclick="setAllWeights(1)">Set All to 1</button>
+                <button onclick="setAllWeights(0)">Set All to 0</button>
+                <button onclick="setAllWeights(-1)">Set All to -1</button>
+                <button onclick="randomizeAllWeights()">Randomize All</button>
+            </div>
+            <div id="weightList"></div>
+            <div style="text-align: center; margin-top: 20px;">
+                <button onclick="applyWeights()">Apply Changes</button>
+                <button onclick="closeWeightEditor()">Cancel</button>
+            </div>
+        </div>
+
+        <div class="weight-editor" id="neuronWeightEditor">
+            <button class="close-btn" onclick="closeNeuronWeightEditor()">×</button>
+            <h3>Neuron Weight Editor</h3>
+            <div style="margin-bottom: 15px;">
+                <button onclick="setAllNeuronWeights(1)">Set All to 1</button>
+                <button onclick="setAllNeuronWeights(0)">Set All to 0</button>
+                <button onclick="setAllNeuronWeights(-1)">Set All to -1</button>
+                <button onclick="randomizeAllNeuronWeights()">Randomize All</button>
+            </div>
+            <div id="neuronWeightList"></div>
+            <div style="text-align: center; margin-top: 20px;">
+                <button onclick="applyNeuronWeights()">Apply Changes</button>
+                <button onclick="closeNeuronWeightEditor()">Cancel</button>
+            </div>
+        </div>
+
+        <canvas id="networkCanvas" width="1000" height="600"></canvas>
+
+        <div class="info-panel">
+            <h3>Network Architecture</h3>
+            <div class="layer-info" id="layerInfo"></div>
+            <p><strong>Total Parameters:</strong> <span id="totalParams">0</span></p>
+            <p><strong>Status:</strong> <span id="status">Ready</span></p>
+            <div style="margin-top: 15px; font-size: 12px; color: #ccc;">
+                <strong>Edit Mode Controls:</strong><br>
+                • Click connection to select • Double-click to edit weight<br>
+                • Click node to select • Double-click to edit neuron weight<br>
+                • Arrow keys: ↑/↓ adjust weight/neuron weight • Delete/Backspace: set to 0 • R: randomize<br>
+                • Adjust hidden layers in Custom architecture via input or +/- buttons
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('networkCanvas');
+        const ctx = canvas.getContext('2d');
+        
+        let network = {
+            layers: [],
+            connections: [],
+            animationState: 'idle',
+            architecture: 'custom',
+            metadata: {}
+        };
+
+        let animationFrame = 0;
+        let animationDirection = 1;
+        let currentMode = 'edit';
+        let selectedConnection = null;
+        let selectedNode = null;
+        let tempWeights = {};
+        let tempNeuronWeights = {};
+
+        const architecturePresets = {
+            mlp: {
+                name: "Multi-Layer Perceptron",
+                description: "Standard feedforward network for classification/regression",
+                getLayers: (input, output, complexity) => {
+                    const sizes = {
+                        small: [input, Math.max(input * 2, 8), output],
+                        medium: [input, Math.max(input * 2, 16), Math.max(input, 8), output],
+                        large: [input, Math.max(input * 3, 32), Math.max(input * 2, 16), Math.max(input, 8), output]
+                    };
+                    return sizes[complexity];
+                }
+            },
+            deep_mlp: {
+                name: "Deep Multi-Layer Perceptron",
+                description: "Deep feedforward network with multiple hidden layers",
+                getLayers: (input, output, complexity) => {
+                    const sizes = {
+                        small: [input, 64, 32, 16, output],
+                        medium: [input, 128, 64, 32, 16, output],
+                        large: [input, 256, 128, 64, 32, 16, output]
+                    };
+                    return sizes[complexity];
+                }
+            },
+            autoencoder: {
+                name: "Autoencoder",
+                description: "Encoder-decoder architecture for dimensionality reduction",
+                getLayers: (input, output, complexity) => {
+                    const bottleneck = Math.max(Math.floor(input / 4), 2);
+                    const sizes = {
+                        small: [input, Math.floor(input * 0.75), bottleneck, Math.floor(input * 0.75), input],
+                        medium: [input, Math.floor(input * 0.8), Math.floor(input * 0.5), bottleneck, Math.floor(input * 0.5), Math.floor(input * 0.8), input],
+                        large: [input, Math.floor(input * 0.9), Math.floor(input * 0.7), Math.floor(input * 0.4), bottleneck, Math.floor(input * 0.4), Math.floor(input * 0.7), Math.floor(input * 0.9), input]
+                    };
+                    return sizes[complexity];
+                }
+            },
+            cnn_style: {
+                name: "CNN-Style Architecture",
+                description: "Convolutional-like structure with decreasing layer sizes",
+                getLayers: (input, output, complexity) => {
+                    const sizes = {
+                        small: [input, Math.floor(input * 0.8), Math.floor(input * 0.5), Math.floor(input * 0.25), output],
+                        medium: [input, Math.floor(input * 0.9), Math.floor(input * 0.7), Math.floor(input * 0.5), Math.floor(input * 0.3), Math.floor(input * 0.1), output],
+                        large: [input, Math.floor(input * 0.95), Math.floor(input * 0.8), Math.floor(input * 0.6), Math.floor(input * 0.4), Math.floor(input * 0.2), Math.floor(input * 0.1), output]
+                    };
+                    return sizes[complexity];
+                }
+            },
+            rnn_style: {
+                name: "RNN-Style Architecture",
+                description: "Recurrent-like structure with consistent hidden sizes",
+                getLayers: (input, output, complexity) => {
+                    const hiddenSize = Math.max(Math.floor(input * 1.5), 8);
+                    const sizes = {
+                        small: [input, hiddenSize, hiddenSize, output],
+                        medium: [input, hiddenSize, hiddenSize, hiddenSize, output],
+                        large: [input, hiddenSize, hiddenSize, hiddenSize, hiddenSize, output]
+                    };
+                    return sizes[complexity];
+                }
+            },
+            transformer_style: {
+                name: "Transformer-Style Architecture",
+                description: "Multi-head attention inspired structure",
+                getLayers: (input, output, complexity) => {
+                    const dModel = Math.max(input, 64);
+                    const sizes = {
+                        small: [input, dModel, dModel * 2, dModel, output],
+                        medium: [input, dModel, dModel * 4, dModel, dModel * 4, dModel, output],
+                        large: [input, dModel, dModel * 4, dModel, dModel * 4, dModel, dModel * 4, dModel, output]
+                    };
+                    return sizes[complexity];
+                }
+            },
+            gan_style: {
+                name: "GAN-Style Generator",
+                description: "Generator-like architecture with expanding layers",
+                getLayers: (input, output, complexity) => {
+                    const sizes = {
+                        small: [input, input * 2, input * 4, output],
+                        medium: [input, input * 2, input * 4, input * 6, output],
+                        large: [input, input * 2, input * 4, input * 6, input * 8, output]
+                    };
+                    return sizes[complexity];
+                }
+            },
+            resnet_style: {
+                name: "ResNet-Style Architecture",
+                description: "Residual network inspired structure",
+                getLayers: (input, output, complexity) => {
+                    const baseSize = Math.max(input, 32);
+                    const sizes = {
+                        small: [input, baseSize, baseSize, baseSize, output],
+                        medium: [input, baseSize, baseSize * 2, baseSize * 2, baseSize, output],
+                        large: [input, baseSize, baseSize * 2, baseSize * 4, baseSize * 2, baseSize, output]
+                    };
+                    return sizes[complexity];
+                }
+            }
+        };
+
+        class Node {
+            constructor(x, y, layer, index) {
+                this.x = x;
+                this.y = y;
+                this.layer = layer;
+                this.index = index;
+                this.activation = Math.random();
+                this.neuronWeight = (Math.random() - 0.5) * 2;
+                this.radius = 15;
+                this.pulsePhase = Math.random() * Math.PI * 2;
+                this.isActive = false;
+            }
+
+            draw() {
+                const pulse = Math.sin(Date.now() * 0.003 + this.pulsePhase) * 0.3 + 0.7;
+                const activeScale = this.isActive ? 1.3 : 1;
+                const weightScale = 1 + Math.abs(this.neuronWeight) * 0.2;
+                
+                if (selectedNode === this) {
+                    ctx.shadowBlur = 15;
+                    ctx.shadowColor = 'yellow';
+                } else {
+                    ctx.shadowBlur = 20;
+                    ctx.shadowColor = this.getColor();
+                }
+                
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.radius * pulse * activeScale * weightScale, 0, 2 * Math.PI);
+                ctx.fillStyle = this.getColor();
+                ctx.fill();
+                
+                ctx.shadowBlur = 0;
+                ctx.beginPath();
+                ctx.arc(this.x - 3, this.y - 3, this.radius * 0.3 * pulse * activeScale * weightScale, 0, 2 * Math.PI);
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+                ctx.fill();
+                
+                ctx.fillStyle = 'white';
+                ctx.font = '10px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText(this.activation.toFixed(2), this.x, this.y + 35);
+                ctx.fillText(`w:${this.neuronWeight.toFixed(2)}`, this.x, this.y + 50);
+            }
+
+            getColor() {
+                const intensity = this.activation;
+                let baseColor;
+                
+                if (network.architecture === 'autoencoder') {
+                    const totalLayers = network.layers.length;
+                    const middleLayer = Math.floor(totalLayers / 2);
+                    if (this.layer === middleLayer) {
+                        baseColor = [255, 255, 100];
+                    } else if (this.layer < middleLayer) {
+                        baseColor = [100, 255, 100];
+                    } else {
+                        baseColor = [255, 100, 255];
+                    }
+                } else if (network.architecture === 'gan_style') {
+                    const progress = this.layer / (network.layers.length - 1);
+                    baseColor = [100 + progress * 155, 100 + (1-progress) * 155, 255];
+                } else if (network.architecture === 'cnn_style') {
+                    const progress = this.layer / (network.layers.length - 1);
+                    baseColor = [255, 100 + progress * 155, 100];
+                } else {
+                    if (this.layer === 0) {
+                        baseColor = [100, 255, 100];
+                    } else if (this.layer === network.layers.length - 1) {
+                        baseColor = [255, 100, 100];
+                    } else {
+                        baseColor = [100, 150, 255];
+                    }
+                }
+                
+                return `rgba(${baseColor[0]}, ${baseColor[1]}, ${baseColor[2]}, ${0.5 + intensity * 0.5})`;
+            }
+        }
+
+        class Connection {
+            constructor(from, to) {
+                this.from = from;
+                this.to = to;
+                this.weight = (Math.random() - 0.5) * 2;
+                this.isActive = false;
+                this.pulseProgress = 0;
+            }
+
+            draw() {
+                const opacity = Math.abs(this.weight) * 0.3 + 0.1;
+                const color = this.weight > 0 ? 
+                    `rgba(100, 255, 100, ${opacity})` : 
+                    `rgba(255, 100, 100, ${opacity})`;
+                
+                ctx.strokeStyle = color;
+                ctx.lineWidth = Math.abs(this.weight) * 2 + 0.5;
+                
+                if (this.isActive) {
+                    ctx.lineWidth *= 2;
+                    ctx.shadowBlur = 10;
+                    ctx.shadowColor = color;
+                }
+                
+                if (selectedConnection === this) {
+                    ctx.strokeStyle = 'rgba(255, 255, 0, 0.8)';
+                    ctx.lineWidth = 4;
+                    ctx.shadowBlur = 15;
+                    ctx.shadowColor = 'yellow';
+                }
+                
+                ctx.beginPath();
+                ctx.moveTo(this.from.x, this.from.y);
+                ctx.lineTo(this.to.x, this.to.y);
+                ctx.stroke();
+                
+                if (currentMode === 'edit') {
+                    const midX = (this.from.x + this.to.x) / 2;
+                    const midY = (this.from.y + this.to.y) / 2;
+                    
+                    ctx.shadowBlur = 0;
+                    ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+                    ctx.fillRect(midX - 15, midY - 8, 30, 16);
+                    
+                    ctx.fillStyle = 'white';
+                    ctx.font = '10px Arial';
+                    ctx.textAlign = 'center';
+                    ctx.fillText(this.weight.toFixed(2), midX, midY + 3);
+                }
+                
+                if (this.isActive && this.pulseProgress > 0) {
+                    const progress = this.pulseProgress;
+                    const pulseX = this.from.x + (this.to.x - this.from.x) * progress;
+                    const pulseY = this.from.y + (this.to.y - this.from.y) * progress;
+                    
+                    ctx.shadowBlur = 15;
+                    ctx.beginPath();
+                    ctx.arc(pulseX, pulseY, 5, 0, 2 * Math.PI);
+                    ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+                    ctx.fill();
+                }
+                
+                ctx.shadowBlur = 0;
+            }
+
+            isPointOnConnection(x, y) {
+                const dist = this.distanceToLine(x, y, this.from.x, this.from.y, this.to.x, this.to.y);
+                return dist < 10;
+            }
+
+            distanceToLine(px, py, x1, y1, x2, y2) {
+                const A = px - x1;
+                const B = py - y1;
+                const C = x2 - x1;
+                const D = y2 - y1;
+
+                const dot = A * C + B * D;
+                const lenSq = C * C + D * D;
+                let param = -1;
+                if (lenSq !== 0) param = dot / lenSq;
+
+                let xx, yy;
+                if (param < 0) {
+                    xx = x1;
+                    yy = y1;
+                } else if (param > 1) {
+                    xx = x2;
+                    yy = y2;
+                } else {
+                    xx = x1 + param * C;
+                    yy = y1 + param * D;
+                }
+
+                const dx = px - xx;
+                const dy = py - yy;
+                return Math.sqrt(dx * dx + dy * dy);
+            }
+        }
+
+        function generateNetwork() {
+            const architectureType = document.getElementById('architectureType').value;
+            network.architecture = architectureType;
+            
+            let layerSizes;
+            
+            if (architectureType === 'custom') {
+                const inputNodes = parseInt(document.getElementById('inputNodes').value);
+                const outputNodes = parseInt(document.getElementById('outputNodes').value);
+                const hiddenLayerInputs = document.querySelectorAll('.hidden-layer-nodes');
+                const hiddenLayerSizes = Array.from(hiddenLayerInputs).map(input => parseInt(input.value));
+                
+                if (isNaN(inputNodes) || inputNodes < 2 || inputNodes > 20) {
+                    alert('Input nodes must be between 2 and 20.');
+                    document.getElementById('inputNodes').classList.add('invalid');
+                    return;
+                } else {
+                    document.getElementById('inputNodes').classList.remove('invalid');
+                }
+                
+                if (isNaN(outputNodes) || outputNodes < 1 || outputNodes > 20) {
+                    alert('Output nodes must be between 1 and 20.');
+                    document.getElementById('outputNodes').classList.add('invalid');
+                    return;
+                } else {
+                    document.getElementById('outputNodes').classList.remove('invalid');
+                }
+                
+                for (let i = 0; i < hiddenLayerSizes.length; i++) {
+                    if (isNaN(hiddenLayerSizes[i]) || hiddenLayerSizes[i] < 2 || hiddenLayerSizes[i] > 20) {
+                        alert(`Hidden Layer ${i + 1} nodes must be between 2 and 20.`);
+                        hiddenLayerInputs[i].classList.add('invalid');
+                        hiddenLayerInputs[i].parentElement.classList.add('invalid');
+                        return;
+                    } else {
+                        hiddenLayerInputs[i].classList.remove('invalid');
+                        hiddenLayerInputs[i].parentElement.classList.remove('invalid');
+                    }
+                }
+                
+                if (hiddenLayerSizes.length === 0) {
+                    alert('At least one hidden layer is required.');
+                    return;
+                }
+                
+                layerSizes = [inputNodes, ...hiddenLayerSizes, outputNodes];
+            } else {
+                const inputNodes = parseInt(document.getElementById('presetInputNodes').value);
+                const outputNodes = parseInt(document.getElementById('presetOutputNodes').value);
+                const complexity = document.getElementById('presetComplexity').value;
+                
+                if (isNaN(inputNodes) || inputNodes < 1 || inputNodes > 1000) {
+                    alert('Preset input nodes must be between 1 and 1000.');
+                    document.getElementById('presetInputNodes').classList.add('invalid');
+                    return;
+                } else {
+                    document.getElementById('presetInputNodes').classList.remove('invalid');
+                }
+                
+                if (isNaN(outputNodes) || outputNodes < 1 || outputNodes > 100) {
+                    alert('Preset output nodes must be between 1 and 100.');
+                    document.getElementById('presetOutputNodes').classList.add('invalid');
+                    return;
+                } else {
+                    document.getElementById('presetOutputNodes').classList.remove('invalid');
+                }
+                
+                const preset = architecturePresets[architectureType];
+                layerSizes = preset.getLayers(inputNodes, outputNodes, complexity);
+                network.metadata = {
+                    name: preset.name,
+                    description: preset.description,
+                    complexity: complexity
+                };
+            }
+
+            network.layers = [];
+            network.connections = [];
+
+            const layerSpacing = canvas.width / (layerSizes.length + 1);
+            
+            layerSizes.forEach((size, layerIndex) => {
+                const layer = [];
+                const nodeSpacing = canvas.height / (size + 1);
+                
+                for (let i = 0; i < size; i++) {
+                    const x = layerSpacing * (layerIndex + 1);
+                    const y = nodeSpacing * (i + 1);
+                    const node = new Node(x, y, layerIndex, i);
+                    
+                    if (architectureType === 'autoencoder') {
+                        const totalLayers = layerSizes.length;
+                        const middleLayer = Math.floor(totalLayers / 2);
+                        if (layerIndex === middleLayer) {
+                            node.activation = Math.random() * 0.3 + 0.7;
+                            node.neuronWeight = (Math.random() - 0.5) * 0.5;
+                        }
+                    } else if (architectureType === 'resnet_style') {
+                        node.neuronWeight = (Math.random() - 0.5) * 0.5;
+                    } else if (architectureType === 'transformer_style') {
+                        const fanIn = layerIndex > 0 ? layerSizes[layerIndex - 1] : size;
+                        const limit = Math.sqrt(6 / fanIn);
+                        node.neuronWeight = (Math.random() - 0.5) * limit;
+                    }
+                    
+                    layer.push(node);
+                }
+                network.layers.push(layer);
+            });
+
+            for (let i = 0; i < network.layers.length - 1; i++) {
+                const currentLayer = network.layers[i];
+                const nextLayer = network.layers[i + 1];
+                
+                currentLayer.forEach(fromNode => {
+                    nextLayer.forEach(toNode => {
+                        const connection = new Connection(fromNode, toNode);
+                        
+                        if (architectureType === 'resnet_style') {
+                            connection.weight = (Math.random() - 0.5) * 0.5;
+                        } else if (architectureType === 'transformer_style') {
+                            const fanIn = currentLayer.length;
+                            const fanOut = nextLayer.length;
+                            const limit = Math.sqrt(6 / (fanIn + fanOut));
+                            connection.weight = (Math.random() - 0.5) * 2 * limit;
+                        } else {
+                            connection.weight = (Math.random() - 0.5) * 2;
+                        }
+                        
+                        network.connections.push(connection);
+                    });
+                });
+            }
+
+            updateInfo();
+            draw();
+        }
+
+        function onArchitectureChange() {
+            const architectureType = document.getElementById('architectureType').value;
+            const customControls = document.getElementById('customControls');
+            const presetControls = document.getElementById('presetControls');
+            
+            if (architectureType === 'custom') {
+                customControls.style.display = 'block';
+                presetControls.style.display = 'none';
+            } else {
+                customControls.style.display = 'none';
+                presetControls.style.display = 'block';
+            }
+        }
+
+        function adjustHiddenLayers(delta) {
+            const numLayersInput = document.getElementById('numHiddenLayers');
+            let numLayers = parseInt(numLayersInput.value) + delta;
+            
+            if (numLayers < 1) {
+                alert('At least one hidden layer is required.');
+                return;
+            }
+            if (numLayers > 10) {
+                alert('Maximum 10 hidden layers allowed.');
+                return;
+            }
+            
+            numLayersInput.value = numLayers;
+            updateHiddenLayerInputs();
+        }
+
+        function updateHiddenLayerInputs() {
+            const numLayersInput = document.getElementById('numHiddenLayers');
+            let numLayers = parseInt(numLayersInput.value);
+            
+            if (isNaN(numLayers) || numLayers < 1 || numLayers > 10) {
+                alert('Number of hidden layers must be between 1 and 10.');
+                numLayersInput.classList.add('invalid');
+                numLayersInput.value = Math.max(1, Math.min(10, numLayers || 2));
+                numLayers = parseInt(numLayersInput.value);
+                numLayersInput.classList.remove('invalid');
+            } else {
+                numLayersInput.classList.remove('invalid');
+            }
+            
+            const container = document.getElementById('hiddenLayerInputs');
+            const existingInputs = document.querySelectorAll('.hidden-layer-nodes');
+            const existingValues = Array.from(existingInputs).map(input => parseInt(input.value) || 4);
+            
+            container.innerHTML = '';
+            
+            for (let i = 0; i < numLayers; i++) {
+                const div = document.createElement('div');
+                div.className = 'layer-config';
+                const defaultValue = existingValues[i] || (i === 0 ? 6 : 4);
+                div.innerHTML = `
+                    <label>Layer ${i + 1} Nodes (2-20):</label>
+                    <input type="number" value="${defaultValue}" min="2" max="20" class="hidden-layer-nodes">
+                `;
+                container.appendChild(div);
+            }
+        }
+
+        function setMode(mode) {
+            currentMode = mode;
+            selectedConnection = null;
+            selectedNode = null;
+            
+            document.getElementById('editMode').classList.toggle('active', mode === 'edit');
+            document.getElementById('viewMode').classList.toggle('active', mode === 'view');
+            
+            draw();
+        }
+
+        function randomizeWeights() {
+            network.connections.forEach(conn => {
+                conn.weight = (Math.random() - 0.5) * 4;
+            });
+            draw();
+        }
+
+        function randomizeNeuronWeights() {
+            network.layers.forEach(layer => {
+                layer.forEach(node => {
+                    node.neuronWeight = (Math.random() - 0.5) * 4;
+                });
+            });
+            draw();
+        }
+
+        function openWeightEditor() {
+            tempWeights = {};
+            const weightList = document.getElementById('weightList');
+            weightList.innerHTML = '';
+
+            network.connections.forEach((conn, index) => {
+                const fromInfo = `L${conn.from.layer}N${conn.from.index}`;
+                const toInfo = `L${conn.to.layer}N${conn.to.index}`;
+                
+                const div = document.createElement('div');
+                div.className = 'weight-item';
+                div.innerHTML = `
+                    <label>${fromInfo} → ${toInfo}:</label>
+                    <input type="number" step="0.1" value="${conn.weight.toFixed(2)}" 
+                           onchange="tempWeights[${index}] = parseFloat(this.value)">
+                `;
+                weightList.appendChild(div);
+                
+                tempWeights[index] = conn.weight;
+            });
+
+            document.getElementById('weightEditor').style.display = 'block';
+        }
+
+        function closeWeightEditor() {
+            document.getElementById('weightEditor').style.display = 'none';
+        }
+
+        function setAllWeights(value) {
+            const inputs = document.querySelectorAll('#weightList input');
+            inputs.forEach((input, index) => {
+                input.value = value;
+                tempWeights[index] = value;
+            });
+        }
+
+        function randomizeAllWeights() {
+            const inputs = document.querySelectorAll('#weightList input');
+            inputs.forEach((input, index) => {
+                const value = ((Math.random() - 0.5) * 4).toFixed(2);
+                input.value = value;
+                tempWeights[index] = parseFloat(value);
+            });
+        }
+
+        function applyWeights() {
+            network.connections.forEach((conn, index) => {
+                if (tempWeights.hasOwnProperty(index)) {
+                    conn.weight = tempWeights[index];
+                }
+            });
+            closeWeightEditor();
+            draw();
+        }
+
+        function openNeuronWeightEditor() {
+            tempNeuronWeights = {};
+            const neuronWeightList = document.getElementById('neuronWeightList');
+            neuronWeightList.innerHTML = '';
+
+            network.layers.forEach((layer, layerIndex) => {
+                layer.forEach((node, nodeIndex) => {
+                    const nodeInfo = `L${layerIndex}N${nodeIndex}`;
+                    const div = document.createElement('div');
+                    div.className = 'weight-item';
+                    div.innerHTML = `
+                        <label>${nodeInfo} Neuron Weight:</label>
+                        <input type="number" step="0.1" value="${node.neuronWeight.toFixed(2)}" 
+                               onchange="tempNeuronWeights['${layerIndex}_${nodeIndex}'] = parseFloat(this.value)">
+                    `;
+                    neuronWeightList.appendChild(div);
+                    tempNeuronWeights[`${layerIndex}_${nodeIndex}`] = node.neuronWeight;
+                });
+            });
+
+            document.getElementById('neuronWeightEditor').style.display = 'block';
+        }
+
+        function closeNeuronWeightEditor() {
+            document.getElementById('neuronWeightEditor').style.display = 'none';
+        }
+
+        function setAllNeuronWeights(value) {
+            const inputs = document.querySelectorAll('#neuronWeightList input');
+            inputs.forEach((input) => {
+                input.value = value;
+                const [layerIndex, nodeIndex] = input.previousElementSibling.textContent.match(/L(\d+)N(\d+)/).slice(1);
+                tempNeuronWeights[`${layerIndex}_${nodeIndex}`] = value;
+            });
+        }
+
+        function randomizeAllNeuronWeights() {
+            const inputs = document.querySelectorAll('#neuronWeightList input');
+            inputs.forEach((input) => {
+                const value = ((Math.random() - 0.5) * 4).toFixed(2);
+                input.value = value;
+                const [layerIndex, nodeIndex] = input.previousElementSibling.textContent.match(/L(\d+)N(\d+)/).slice(1);
+                tempNeuronWeights[`${layerIndex}_${nodeIndex}`] = parseFloat(value);
+            });
+        }
+
+        function applyNeuronWeights() {
+            network.layers.forEach((layer, layerIndex) => {
+                layer.forEach((node, nodeIndex) => {
+                    if (tempNeuronWeights.hasOwnProperty(`${layerIndex}_${nodeIndex}`)) {
+                        node.neuronWeight = tempNeuronWeights[`${layerIndex}_${nodeIndex}`];
+                    }
+                });
+            });
+            closeNeuronWeightEditor();
+            draw();
+        }
+
+        function updateInfo() {
+            const layerInfo = document.getElementById('layerInfo');
+            const totalParams = document.getElementById('totalParams');
+            const status = document.getElementById('status');
+            
+            layerInfo.innerHTML = '';
+            let paramCount = 0;
+            
+            if (network.architecture !== 'custom' && network.metadata.name) {
+                const archDiv = document.createElement('div');
+                archDiv.className = 'preset-info';
+                archDiv.innerHTML = `
+                    <strong>${network.metadata.name}</strong><br>
+                    ${network.metadata.description}<br>
+                    <em>Complexity: ${network.metadata.complexity}</em>
+                `;
+                layerInfo.appendChild(archDiv);
+            }
+            
+            network.layers.forEach((layer, index) => {
+                const div = document.createElement('div');
+                div.className = 'layer';
+                
+                let layerName = '';
+                let layerColor = '';
+                
+                if (network.architecture === 'autoencoder') {
+                    const totalLayers = network.layers.length;
+                    const middleLayer = Math.floor(totalLayers / 2);
+                    if (index === middleLayer) {
+                        layerName = 'Bottleneck';
+                        layerColor = 'background: rgba(255, 255, 100, 0.2);';
+                    } else if (index < middleLayer) {
+                        layerName = `Encoder ${index + 1}`;
+                        layerColor = 'background: rgba(100, 255, 100, 0.2);';
+                    } else {
+                        layerName = `Decoder ${index - middleLayer}`;
+                        layerColor = 'background: rgba(255, 100, 255, 0.2);';
+                    }
+                } else {
+                    if (index === 0) layerName = 'Input';
+                    else if (index === network.layers.length - 1) layerName = 'Output';
+                    else layerName = `Hidden ${index}`;
+                }
+                
+                div.innerHTML = `<strong>${layerName}</strong><br>${layer.length} nodes`;
+                div.style.cssText += layerColor;
+                layerInfo.appendChild(div);
+                
+                if (index > 0) {
+                    paramCount += network.layers[index - 1].length * layer.length;
+                }
+                paramCount += layer.length;
+            });
+            
+            totalParams.textContent = paramCount.toLocaleString();
+            
+            if (network.architecture !== 'custom') {
+                status.textContent = `Ready - ${network.metadata.name}`;
+            } else {
+                status.textContent = 'Ready - Custom Architecture';
+            }
+        }
+
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            network.connections.forEach(connection => connection.draw());
+            
+            network.layers.forEach(layer => {
+                layer.forEach(node => node.draw());
+            });
+        }
+
+        function animateForward() {
+            if (network.animationState !== 'idle') return;
+            
+            network.animationState = 'forward';
+            animationFrame = 0;
+            animationDirection = 1;
+            document.getElementById('status').textContent = 'Forward Pass Running...';
+            
+            runAnimation();
+        }
+
+        function animateBackward() {
+            if (network.animationState !== 'idle') return;
+            
+            network.animationState = 'backward';
+            animationFrame = 0;
+            animationDirection = -1;
+            document.getElementById('status').textContent = 'Backpropagation Running...';
+            
+            runAnimation();
+        }
+
+        function runAnimation() {
+            if (network.animationState === 'idle') return;
+            
+            network.layers.forEach(layer => {
+                layer.forEach(node => node.isActive = false);
+            });
+            network.connections.forEach(conn => {
+                conn.isActive = false;
+                conn.pulseProgress = 0;
+            });
+            
+            const totalLayers = network.layers.length;
+            const currentLayer = animationDirection === 1 ? 
+                Math.floor(animationFrame / 30) : 
+                totalLayers - 1 - Math.floor(animationFrame / 30);
+            
+            if (currentLayer >= 0 && currentLayer < totalLayers) {
+                network.layers[currentLayer].forEach(node => {
+                    node.isActive = true;
+                    node.activation = Math.random() * Math.abs(node.neuronWeight);
+                });
+                
+                const connectionStart = animationDirection === 1 ? currentLayer : currentLayer - 1;
+                const connectionEnd = animationDirection === 1 ? currentLayer + 1 : currentLayer;
+                
+                if (connectionStart >= 0 && connectionEnd < totalLayers) {
+                    network.connections.forEach(conn => {
+                        if (conn.from.layer === connectionStart && conn.to.layer === connectionEnd) {
+                            conn.isActive = true;
+                            conn.pulseProgress = (animationFrame % 30) / 30;
+                        }
+                    });
+                }
+            }
+            
+            draw();
+            animationFrame++;
+            
+            if (animationFrame < totalLayers * 30) {
+                requestAnimationFrame(runAnimation);
+            } else {
+                network.animationState = 'idle';
+                document.getElementById('status').textContent = 'Animation Complete';
+                resetAnimation();
+            }
+        }
+
+        function resetAnimation() {
+            network.animationState = 'idle';
+            animationFrame = 0;
+            
+            network.layers.forEach(layer => {
+                layer.forEach(node => {
+                    node.isActive = false;
+                    node.activation = Math.random();
+                });
+            });
+            
+            network.connections.forEach(conn => {
+                conn.isActive = false;
+                conn.pulseProgress = 0;
+            });
+            
+            document.getElementById('status').textContent = 'Ready';
+            draw();
+        }
+
+        function animate() {
+            if (network.animationState === 'idle') {
+                draw();
+            }
+            requestAnimationFrame(animate);
+        }
+
+        onArchitectureChange();
+        generateNetwork();
+        animate();
+
+        canvas.addEventListener('click', function(e) {
+            if (currentMode !== 'edit') return;
+            
+            const rect = canvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            
+            selectedConnection = null;
+            selectedNode = null;
+            
+            for (let layer of network.layers) {
+                for (let node of layer) {
+                    const dx = x - node.x;
+                    const dy = y - node.y;
+                    if (Math.sqrt(dx * dx + dy * dy) < node.radius * 1.5) {
+                        selectedNode = node;
+                        break;
+                    }
+                }
+                if (selectedNode) break;
+            }
+            
+            if (!selectedNode) {
+                for (let conn of network.connections) {
+                    if (conn.isPointOnConnection(x, y)) {
+                        selectedConnection = conn;
+                        break;
+                    }
+                }
+            }
+            
+            draw();
+        });
+
+        canvas.addEventListener('dblclick', function(e) {
+            if (currentMode !== 'edit') return;
+            
+            const rect = canvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            
+            for (let layer of network.layers) {
+                for (let node of layer) {
+                    const dx = x - node.x;
+                    const dy = y - node.y;
+                    if (Math.sqrt(dx * dx + dy * dy) < node.radius * 1.5) {
+                        const newNeuronWeight = prompt(`Enter new neuron weight for L${node.layer}N${node.index} (current: ${node.neuronWeight.toFixed(2)}):`, node.neuronWeight.toFixed(2));
+                        if (newNeuronWeight !== null) {
+                            const weight = parseFloat(newNeuronWeight);
+                            if (!isNaN(weight)) {
+                                node.neuronWeight = weight;
+                                draw();
+                            }
+                        }
+                        return;
+                    }
+                }
+            }
+            
+            for (let conn of network.connections) {
+                if (conn.isPointOnConnection(x, y)) {
+                    const newWeight = prompt(`Enter new weight (current: ${conn.weight.toFixed(2)}):`, conn.weight.toFixed(2));
+                    if (newWeight !== null) {
+                        const weight = parseFloat(newWeight);
+                        if (!isNaN(weight)) {
+                            conn.weight = weight;
+                            draw();
+                        }
+                    }
+                    break;
+                }
+            }
+        });
+
+        document.addEventListener('keydown', function(e) {
+            if (currentMode !== 'edit') return;
+            
+            if (selectedConnection) {
+                switch(e.key) {
+                    case 'ArrowUp':
+                        selectedConnection.weight += 0.1;
+                        selectedConnection.weight = Math.round(selectedConnection.weight * 10) / 10;
+                        draw();
+                        e.preventDefault();
+                        break;
+                    case 'ArrowDown':
+                        selectedConnection.weight -= 0.1;
+                        selectedConnection.weight = Math.round(selectedConnection.weight * 10) / 10;
+                        draw();
+                        e.preventDefault();
+                        break;
+                    case 'Delete':
+                    case 'Backspace':
+                        selectedConnection.weight = 0;
+                        draw();
+                        e.preventDefault();
+                        break;
+                    case 'r':
+                        selectedConnection.weight = (Math.random() - 0.5) * 4;
+                        draw();
+                        e.preventDefault();
+                        break;
+                }
+            } else if (selectedNode) {
+                switch(e.key) {
+                    case 'ArrowUp':
+                        selectedNode.neuronWeight += 0.1;
+                        selectedNode.neuronWeight = Math.round(selectedNode.neuronWeight * 10) / 10;
+                        draw();
+                        e.preventDefault();
+                        break;
+                    case 'ArrowDown':
+                        selectedNode.neuronWeight -= 0.1;
+                        selectedNode.neuronWeight = Math.round(selectedNode.neuronWeight * 10) / 10;
+                        draw();
+                        e.preventDefault();
+                        break;
+                    case 'Delete':
+                    case 'Backspace':
+                        selectedNode.neuronWeight = 0;
+                        draw();
+                        e.preventDefault();
+                        break;
+                    case 'r':
+                        selectedNode.neuronWeight = (Math.random() - 0.5) * 4;
+                        draw();
+                        e.preventDefault();
+                        break;
+                }
+            }
+        });
+    </script>
+</body>
+</html>
