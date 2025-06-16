@@ -3,7 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Interactive neural network visualization tool to explore custom and preset architectures, edit weights, and animate forward/backpropagation.">
+    <meta name="keywords" content="neural network, visualization, machine learning, deep learning, JavaScript, HTML5 Canvas">
+    <meta name="author" content="Your Name">
     <title>Neural Network Visualization</title>
+    <link rel="icon" type="image/png" href="assets/favicon.png">
     <style>
         body {
             margin: 0;
@@ -254,11 +258,17 @@
                         <option value="custom">Custom</option>
                         <option value="mlp">Multi-Layer Perceptron (MLP)</option>
                         <option value="deep_mlp">Deep MLP</option>
+                        <option value="cnn">Convolutional Neural Network (CNN)</option>
+                        <option value="rnn">Recurrent Neural Network (RNN)</option>
+                        <option value="lstm">Long Short-Term Memory (LSTM)</option>
+                        <option value="gru">Gated Recurrent Unit (GRU)</option>
                         <option value="autoencoder">Autoencoder</option>
-                        <option value="cnn_style">CNN-Style (Convolutional)</option>
-                        <option value="rnn_style">RNN-Style (Recurrent)</option>
-                        <option value="transformer_style">Transformer-Style</option>
-                        <option value="gan_style">GAN-Style</option>
+                        <option value="vae">Variational Autoencoder (VAE)</option>
+                        <option value="transformer">Transformer</option>
+                        <option value="gan">Generative Adversarial Network (GAN)</option>
+                        <option value="som">Self-Organizing Map (SOM)</option>
+                        <option value="rbfn">Radial Basis Function Network (RBFN)</option>
+                        <option value="snn">Spiking Neural Network (SNN)</option>
                         <option value="resnet_style">ResNet-Style</option>
                     </select>
                 </div>
@@ -432,6 +442,57 @@
                     return sizes[complexity];
                 }
             },
+            cnn: {
+                name: "Convolutional Neural Network",
+                description: "Network with convolutional and pooling layers for image processing",
+                getLayers: (input, output, complexity) => {
+                    const sizes = {
+                        small: [input, Math.floor(input * 0.8), Math.floor(input * 0.4), 64, output],
+                        medium: [input, Math.floor(input * 0.9), Math.floor(input * 0.5), 128, 64, output],
+                        large: [input, Math.floor(input * 0.95), Math.floor(input * 0.6), 256, 128, 64, output]
+                    };
+                    return sizes[complexity];
+                }
+            },
+            rnn: {
+                name: "Recurrent Neural Network",
+                description: "Network with recurrent connections for sequential data",
+                getLayers: (input, output, complexity) => {
+                    const hiddenSize = Math.max(Math.floor(input * 1.5), 8);
+                    const sizes = {
+                        small: [input, hiddenSize, output],
+                        medium: [input, hiddenSize, hiddenSize, output],
+                        large: [input, hiddenSize, hiddenSize, hiddenSize, output]
+                    };
+                    return sizes[complexity];
+                }
+            },
+            lstm: {
+                name: "Long Short-Term Memory",
+                description: "RNN variant with memory cells for long-term dependencies",
+                getLayers: (input, output, complexity) => {
+                    const hiddenSize = Math.max(Math.floor(input * 1.5), 8);
+                    const sizes = {
+                        small: [input, hiddenSize, output],
+                        medium: [input, hiddenSize, hiddenSize, output],
+                        large: [input, hiddenSize, hiddenSize, hiddenSize, output]
+                    };
+                    return sizes[complexity];
+                }
+            },
+            gru: {
+                name: "Gated Recurrent Unit",
+                description: "Simplified RNN variant with gating mechanisms",
+                getLayers: (input, output, complexity) => {
+                    const hiddenSize = Math.max(Math.floor(input * 1.5), 8);
+                    const sizes = {
+                        small: [input, hiddenSize, output],
+                        medium: [input, hiddenSize, hiddenSize, output],
+                        large: [input, hiddenSize, hiddenSize, hiddenSize, output]
+                    };
+                    return sizes[complexity];
+                }
+            },
             autoencoder: {
                 name: "Autoencoder",
                 description: "Encoder-decoder architecture for dimensionality reduction",
@@ -445,59 +506,76 @@
                     return sizes[complexity];
                 }
             },
-            cnn_style: {
-                name: "CNN-Style Architecture",
-                description: "Convolutional-like structure with decreasing layer sizes",
+            vae: {
+                name: "Variational Autoencoder",
+                description: "Probabilistic autoencoder for generative modeling",
                 getLayers: (input, output, complexity) => {
+                    const bottleneck = Math.max(Math.floor(input / 4), 2);
                     const sizes = {
-                        small: [input, Math.floor(input * 0.8), Math.floor(input * 0.5), Math.floor(input * 0.25), output],
-                        medium: [input, Math.floor(input * 0.9), Math.floor(input * 0.7), Math.floor(input * 0.5), Math.floor(input * 0.3), Math.floor(input * 0.1), output],
-                        large: [input, Math.floor(input * 0.95), Math.floor(input * 0.8), Math.floor(input * 0.6), Math.floor(input * 0.4), Math.floor(input * 0.2), Math.floor(input * 0.1), output]
+                        small: [input, Math.floor(input * 0.75), bottleneck * 2, Math.floor(input * 0.75), input],
+                        medium: [input, Math.floor(input * 0.8), Math.floor(input * 0.5), bottleneck * 2, Math.floor(input * 0.5), Math.floor(input * 0.8), input],
+                        large: [input, Math.floor(input * 0.9), Math.floor(input * 0.7), Math.floor(input * 0.4), bottleneck * 2, Math.floor(input * 0.4), Math.floor(input * 0.7), Math.floor(input * 0.9), input]
                     };
                     return sizes[complexity];
                 }
             },
-            rnn_style: {
-                name: "RNN-Style Architecture",
-                description: "Recurrent-like structure with consistent hidden sizes",
-                getLayers: (input, output, complexity) => {
-                    const hiddenSize = Math.max(Math.floor(input * 1.5), 8);
-                    const sizes = {
-                        small: [input, hiddenSize, hiddenSize, output],
-                        medium: [input, hiddenSize, hiddenSize, hiddenSize, output],
-                        large: [input, hiddenSize, hiddenSize, hiddenSize, hiddenSize, output]
-                    };
-                    return sizes[complexity];
-                }
-            },
-            transformer_style: {
-                name: "Transformer-Style Architecture",
-                description: "Multi-head attention inspired structure",
+            transformer: {
+                name: "Transformer",
+                description: "Encoder-decoder architecture with attention for NLP",
                 getLayers: (input, output, complexity) => {
                     const dModel = Math.max(input, 64);
                     const sizes = {
-                        small: [input, dModel, dModel * 2, dModel, output],
-                        medium: [input, dModel, dModel * 4, dModel, dModel * 4, dModel, output],
-                        large: [input, dModel, dModel * 4, dModel, dModel * 4, dModel, dModel * 4, dModel, output]
+                        small: [input, dModel, dModel, dModel, output],
+                        medium: [input, dModel, dModel * 2, dModel, dModel * 2, dModel, output],
+                        large: [input, dModel, dModel * 2, dModel, dModel * 2, dModel, dModel * 2, dModel, output]
                     };
                     return sizes[complexity];
                 }
             },
-            gan_style: {
-                name: "GAN-Style Generator",
-                description: "Generator-like architecture with expanding layers",
+            gan: {
+                name: "Generative Adversarial Network",
+                description: "Generator and discriminator for generative tasks",
                 getLayers: (input, output, complexity) => {
                     const sizes = {
-                        small: [input, input * 2, input * 4, output],
-                        medium: [input, input * 2, input * 4, input * 6, output],
-                        large: [input, input * 2, input * 4, input * 6, input * 8, output]
+                        small: [input, input * 2, input * 4, output, output * 2, output],
+                        medium: [input, input * 2, input * 4, input * 6, output, output * 2, output],
+                        large: [input, input * 2, input * 4, input * 6, input * 8, output, output * 2, output]
+                    };
+                    return sizes[complexity];
+                }
+            },
+            som: {
+                name: "Self-Organizing Map",
+                description: "Unsupervised network for clustering and visualization",
+                getLayers: (input, output, complexity) => {
+                    const gridSize = complexity === 'large' ? 16 : complexity === 'medium' ? 8 : 4;
+                    return [input, gridSize * gridSize];
+                }
+            },
+            rbfn: {
+                name: "Radial Basis Function Network",
+                description: "Network for function approximation using radial basis functions",
+                getLayers: (input, output, complexity) => {
+                    const hiddenSize = complexity === 'large' ? 32 : complexity === 'medium' ? 16 : 8;
+                    return [input, hiddenSize, output];
+                }
+            },
+            snn: {
+                name: "Spiking Neural Network",
+                description: "Biologically inspired network with spiking neurons",
+                getLayers: (input, output, complexity) => {
+                    const hiddenSize = Math.max(Math.floor(input * 1.5), 8);
+                    const sizes = {
+                        small: [input, hiddenSize, output],
+                        medium: [input, hiddenSize, hiddenSize, output],
+                        large: [input, hiddenSize, hiddenSize, hiddenSize, output]
                     };
                     return sizes[complexity];
                 }
             },
             resnet_style: {
                 name: "ResNet-Style Architecture",
-                description: "Residual network inspired structure",
+                description: "Residual network with skip connections",
                 getLayers: (input, output, complexity) => {
                     const baseSize = Math.max(input, 32);
                     const sizes = {
@@ -511,14 +589,15 @@
         };
 
         class Node {
-            constructor(x, y, layer, index) {
+            constructor(x, y, layer, index, type = 'standard') {
                 this.x = x;
                 this.y = y;
                 this.layer = layer;
                 this.index = index;
+                this.type = type; // e.g., 'standard', 'conv', 'lstm', 'spike'
                 this.activation = Math.random();
                 this.neuronWeight = (Math.random() - 0.5) * 2;
-                this.radius = 15;
+                this.radius = type === 'lstm' ? 20 : 15;
                 this.pulsePhase = Math.random() * Math.PI * 2;
                 this.isActive = false;
             }
@@ -536,16 +615,23 @@
                     ctx.shadowColor = this.getColor();
                 }
                 
-                ctx.beginPath();
-                ctx.arc(this.x, this.y, this.radius * pulse * activeScale * weightScale, 0, 2 * Math.PI);
+                if (this.type === 'lstm') {
+                    ctx.beginPath();
+                    ctx.rect(this.x - this.radius, this.y - this.radius, this.radius * 2, this.radius * 2);
+                } else {
+                    ctx.beginPath();
+                    ctx.arc(this.x, this.y, this.radius * pulse * activeScale * weightScale, 0, 2 * Math.PI);
+                }
                 ctx.fillStyle = this.getColor();
                 ctx.fill();
                 
                 ctx.shadowBlur = 0;
-                ctx.beginPath();
-                ctx.arc(this.x - 3, this.y - 3, this.radius * 0.3 * pulse * activeScale * weightScale, 0, 2 * Math.PI);
-                ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
-                ctx.fill();
+                if (this.type !== 'lstm') {
+                    ctx.beginPath();
+                    ctx.arc(this.x - 3, this.y - 3, this.radius * 0.3 * pulse * activeScale * weightScale, 0, 2 * Math.PI);
+                    ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+                    ctx.fill();
+                }
                 
                 ctx.fillStyle = 'white';
                 ctx.font = '10px Arial';
@@ -558,7 +644,7 @@
                 const intensity = this.activation;
                 let baseColor;
                 
-                if (network.architecture === 'autoencoder') {
+                if (network.architecture === 'autoencoder' || network.architecture === 'vae') {
                     const totalLayers = network.layers.length;
                     const middleLayer = Math.floor(totalLayers / 2);
                     if (this.layer === middleLayer) {
@@ -568,12 +654,22 @@
                     } else {
                         baseColor = [255, 100, 255];
                     }
-                } else if (network.architecture === 'gan_style') {
-                    const progress = this.layer / (network.layers.length - 1);
-                    baseColor = [100 + progress * 155, 100 + (1-progress) * 155, 255];
-                } else if (network.architecture === 'cnn_style') {
-                    const progress = this.layer / (network.layers.length - 1);
-                    baseColor = [255, 100 + progress * 155, 100];
+                } else if (network.architecture === 'gan') {
+                    const totalLayers = network.layers.length;
+                    const middleLayer = Math.floor(totalLayers / 2);
+                    if (this.layer < middleLayer) {
+                        baseColor = [100, 255, 255];
+                    } else {
+                        baseColor = [255, 255, 100];
+                    }
+                } else if (network.architecture === 'cnn') {
+                    baseColor = this.type === 'conv' ? [255, 150, 100] : [100, 255, 150];
+                } else if (network.architecture === 'lstm' || network.architecture === 'gru') {
+                    baseColor = [150, 100, 255];
+                } else if (network.architecture === 'snn') {
+                    baseColor = [255, 100, 150];
+                } else if (network.architecture === 'som') {
+                    baseColor = [100, 200, 255];
                 } else {
                     if (this.layer === 0) {
                         baseColor = [100, 255, 100];
@@ -589,9 +685,10 @@
         }
 
         class Connection {
-            constructor(from, to) {
+            constructor(from, to, type = 'feedforward') {
                 this.from = from;
                 this.to = to;
+                this.type = type; // e.g., 'feedforward', 'recurrent', 'skip'
                 this.weight = (Math.random() - 0.5) * 2;
                 this.isActive = false;
                 this.pulseProgress = 0;
@@ -599,9 +696,14 @@
 
             draw() {
                 const opacity = Math.abs(this.weight) * 0.3 + 0.1;
-                const color = this.weight > 0 ? 
-                    `rgba(100, 255, 100, ${opacity})` : 
-                    `rgba(255, 100, 100, ${opacity})`;
+                let color;
+                if (this.type === 'recurrent') {
+                    color = `rgba(255, 255, 100, ${opacity})`;
+                } else if (this.type === 'skip') {
+                    color = `rgba(100, 255, 255, ${opacity})`;
+                } else {
+                    color = this.weight > 0 ? `rgba(100, 255, 100, ${opacity})` : `rgba(255, 100, 100, ${opacity})`;
+                }
                 
                 ctx.strokeStyle = color;
                 ctx.lineWidth = Math.abs(this.weight) * 2 + 0.5;
@@ -621,7 +723,11 @@
                 
                 ctx.beginPath();
                 ctx.moveTo(this.from.x, this.from.y);
-                ctx.lineTo(this.to.x, this.to.y);
+                if (this.type === 'recurrent') {
+                    ctx.quadraticCurveTo(this.from.x + 50, this.from.y - 50, this.to.x, this.to.y);
+                } else {
+                    ctx.lineTo(this.to.x, this.to.y);
+                }
                 ctx.stroke();
                 
                 if (currentMode === 'edit') {
@@ -654,6 +760,13 @@
             }
 
             isPointOnConnection(x, y) {
+                if (this.type === 'recurrent') {
+                    // Simplified check for curved recurrent connections
+                    const midX = (this.from.x + this.to.x) / 2;
+                    const midY = (this.from.y + this.to.y) / 2 - 50;
+                    const dist = Math.sqrt((x - midX) ** 2 + (y - midY) ** 2);
+                    return dist < 20;
+                }
                 const dist = this.distanceToLine(x, y, this.from.x, this.from.y, this.to.x, this.to.y);
                 return dist < 10;
             }
@@ -771,13 +884,22 @@
             layerSizes.forEach((size, layerIndex) => {
                 const layer = [];
                 const nodeSpacing = canvas.height / (size + 1);
+                let nodeType = 'standard';
+                
+                if (architectureType === 'cnn' && layerIndex > 0 && layerIndex < layerSizes.length - 1) {
+                    nodeType = 'conv';
+                } else if (architectureType === 'lstm' || architectureType === 'gru') {
+                    nodeType = 'lstm';
+                } else if (architectureType === 'snn') {
+                    nodeType = 'spike';
+                }
                 
                 for (let i = 0; i < size; i++) {
                     const x = layerSpacing * (layerIndex + 1);
                     const y = nodeSpacing * (i + 1);
-                    const node = new Node(x, y, layerIndex, i);
+                    const node = new Node(x, y, layerIndex, i, nodeType);
                     
-                    if (architectureType === 'autoencoder') {
+                    if (architectureType === 'autoencoder' || architectureType === 'vae') {
                         const totalLayers = layerSizes.length;
                         const middleLayer = Math.floor(totalLayers / 2);
                         if (layerIndex === middleLayer) {
@@ -786,10 +908,12 @@
                         }
                     } else if (architectureType === 'resnet_style') {
                         node.neuronWeight = (Math.random() - 0.5) * 0.5;
-                    } else if (architectureType === 'transformer_style') {
+                    } else if (architectureType === 'transformer') {
                         const fanIn = layerIndex > 0 ? layerSizes[layerIndex - 1] : size;
                         const limit = Math.sqrt(6 / fanIn);
                         node.neuronWeight = (Math.random() - 0.5) * limit;
+                    } else if (architectureType === 'snn') {
+                        node.neuronWeight = Math.random();
                     }
                     
                     layer.push(node);
@@ -807,16 +931,61 @@
                         
                         if (architectureType === 'resnet_style') {
                             connection.weight = (Math.random() - 0.5) * 0.5;
-                        } else if (architectureType === 'transformer_style') {
+                        } else if (architectureType === 'transformer') {
                             const fanIn = currentLayer.length;
                             const fanOut = nextLayer.length;
                             const limit = Math.sqrt(6 / (fanIn + fanOut));
                             connection.weight = (Math.random() - 0.5) * 2 * limit;
+                        } else if (architectureType === 'snn') {
+                            connection.weight = Math.random();
                         } else {
                             connection.weight = (Math.random() - 0.5) * 2;
                         }
                         
                         network.connections.push(connection);
+                    });
+                });
+            }
+
+            // Add recurrent connections for RNN, LSTM, GRU
+            if (['rnn', 'lstm', 'gru'].includes(architectureType)) {
+                for (let i = 1; i < network.layers.length - 1; i++) {
+                    const layer = network.layers[i];
+                    layer.forEach((node, idx) => {
+                        if (idx < layer.length - 1) {
+                            const connection = new Connection(node, layer[idx + 1], 'recurrent');
+                            connection.weight = (Math.random() - 0.5) * 2;
+                            network.connections.push(connection);
+                        }
+                    });
+                }
+            }
+
+            // Add skip connections for ResNet
+            if (architectureType === 'resnet_style') {
+                for (let i = 0; i < network.layers.length - 2; i += 2) {
+                    const fromLayer = network.layers[i];
+                    const toLayer = network.layers[i + 2];
+                    if (fromLayer.length === toLayer.length) {
+                        fromLayer.forEach((fromNode, idx) => {
+                            const connection = new Connection(fromNode, toLayer[idx], 'skip');
+                            connection.weight = (Math.random() - 0.5) * 0.5;
+                            network.connections.push(connection);
+                        });
+                    }
+                }
+            }
+
+            // Add SOM connections (all-to-all within output layer)
+            if (architectureType === 'som') {
+                const outputLayer = network.layers[network.layers.length - 1];
+                outputLayer.forEach((fromNode, i) => {
+                    outputLayer.forEach((toNode, j) => {
+                        if (i !== j) {
+                            const connection = new Connection(fromNode, toNode, 'lateral');
+                            connection.weight = (Math.random() - 0.5) * 2;
+                            network.connections.push(connection);
+                        }
                     });
                 });
             }
@@ -927,7 +1096,7 @@
                 const div = document.createElement('div');
                 div.className = 'weight-item';
                 div.innerHTML = `
-                    <label>${fromInfo} → ${toInfo}:</label>
+                    <label>${fromInfo} → ${toInfo} (${conn.type}):</label>
                     <input type="number" step="0.1" value="${conn.weight.toFixed(2)}" 
                            onchange="tempWeights[${index}] = parseFloat(this.value)">
                 `;
@@ -977,7 +1146,7 @@
 
             network.layers.forEach((layer, layerIndex) => {
                 layer.forEach((node, nodeIndex) => {
-                    const nodeInfo = `L${layerIndex}N${nodeIndex}`;
+                    const nodeInfo = `L${layerIndex}N${nodeIndex} (${node.type})`;
                     const div = document.createElement('div');
                     div.className = 'weight-item';
                     div.innerHTML = `
@@ -1054,11 +1223,11 @@
                 let layerName = '';
                 let layerColor = '';
                 
-                if (network.architecture === 'autoencoder') {
+                if (network.architecture === 'autoencoder' || network.architecture === 'vae') {
                     const totalLayers = network.layers.length;
                     const middleLayer = Math.floor(totalLayers / 2);
                     if (index === middleLayer) {
-                        layerName = 'Bottleneck';
+                        layerName = network.architecture === 'vae' ? 'Latent Space' : 'Bottleneck';
                         layerColor = 'background: rgba(255, 255, 100, 0.2);';
                     } else if (index < middleLayer) {
                         layerName = `Encoder ${index + 1}`;
@@ -1067,6 +1236,43 @@
                         layerName = `Decoder ${index - middleLayer}`;
                         layerColor = 'background: rgba(255, 100, 255, 0.2);';
                     }
+                } else if (network.architecture === 'gan') {
+                    const totalLayers = network.layers.length;
+                    const middleLayer = Math.floor(totalLayers / 2);
+                    if (index < middleLayer) {
+                        layerName = `Generator ${index + 1}`;
+                        layerColor = 'background: rgba(100, 255, 255, 0.2);';
+                    } else {
+                        layerName = `Discriminator ${index - middleLayer + 1}`;
+                        layerColor = 'background: rgba(255, 255, 100, 0.2);';
+                    }
+                } else if (network.architecture === 'cnn') {
+                    layerName = index === 0 ? 'Input' : 
+                                index === network.layers.length - 1 ? 'Output' : 
+                                index % 2 === 1 ? `Conv ${Math.floor(index/2) + 1}` : `Pool ${Math.floor(index/2)}`;
+                    layerColor = index % 2 === 1 ? 'background: rgba(255, 150, 100, 0.2);' : 'background: rgba(100, 255, 150, 0.2);';
+                } else if (['rnn', 'lstm', 'gru'].includes(network.architecture)) {
+                    layerName = index === 0 ? 'Input' : 
+                                index === network.layers.length - 1 ? 'Output' : 
+                                `Recurrent ${index}`;
+                    layerColor = 'background: rgba(150, 100, 255, 0.2);';
+                } else if (network.architecture === 'transformer') {
+                    layerName = index === 0 ? 'Input' : 
+                                index === network.layers.length - 1 ? 'Output' : 
+                                index % 2 === 1 ? `Encoder ${Math.floor(index/2) + 1}` : `Decoder ${Math.floor(index/2)}`;
+                    layerColor = 'background: rgba(100, 150, 255, 0.2);';
+                } else if (network.architecture === 'som') {
+                    layerName = index === 0 ? 'Input' : 'SOM Grid';
+                    layerColor = 'background: rgba(100, 200, 255, 0.2);';
+                } else if (network.architecture === 'rbfn') {
+                    layerName = index === 0 ? 'Input' : 
+                                index === 1 ? 'RBF Layer' : 'Output';
+                    layerColor = 'background: rgba(100, 255, 200, 0.2);';
+                } else if (network.architecture === 'snn') {
+                    layerName = index === 0 ? 'Input' : 
+                                index === network.layers.length - 1 ? 'Output' : 
+                                `Spiking ${index}`;
+                    layerColor = 'background: rgba(255, 100, 150, 0.2);';
                 } else {
                     if (index === 0) layerName = 'Input';
                     else if (index === network.layers.length - 1) layerName = 'Output';
